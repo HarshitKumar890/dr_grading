@@ -1,0 +1,245 @@
+Robust Diabetic Retinopathy Grading Using Dual-Resolution Attention-Based Deep Learning with Ordinal Regression
+Afshan Hashmi
+Tuwaiq Academy, Tuwaiq Research and Development Centre, Riyadh, Saudi Arabia
+afshanhashmi786@gmail.com
+ORCID: 0009-0004-4951-8350
+Abstract
+Diabetic retinopathy (DR) is a leading cause of vision impairment worldwide, and automated grading systems play a crucial role in large-scale screening programs. However, deep learning models often exhibit degraded performance when deployed across datasets acquired under different imaging conditions. This study presents a robust dual-resolution deep learning framework for DR grading that integrates attention-based feature fusion with ordinal regression to improve cross-dataset generalization. The proposed method employs two parallel EfficientNet backbones operating at different spatial resolutions to capture complementary retinal features. A learnable attention mechanism adaptively fuses multi-resolution representations, while an ordinal regression formulation based on the cumulative link model (CORAL) explicitly accounts for the ordered nature of DR severity levels. To mitigate domain discrepancies between datasets, a preprocessing strategy combining circular cropping, contrast enhancement, and histogram matching is applied. The model was trained on the APTOS 2019 dataset and evaluated on both an internal validation split and an external Messidor-2 test set. Experimental results demonstrate strong grading performance, achieving a quadratic weighted kappa (QWK) of 0.88 on the APTOS validation set and 0.68 on the unseen Messidor-2 dataset, indicating improved robustness for cross-dataset DR grading applications.
+
+Keywords: diabetic retinopathy; deep learning; convolutional neural networks; ordinal regression; attention mechanism; cross-dataset generalization.
+
+1Introduction
+Diabetic Retinopathy (DR) is a diabetic eye disease that is a complication of diabetes. High insulin levels that are connected to diabetes strain the eye blood vessels. Slowly it progresses, and most cases have no particular signs in the early stages. Within the course of the DR progress, vision deteriorates and an individual can have a blurry view, distorted clarity of vision, shadows or spots in their field of view, poor night vision, and shades of color disappear (Siddharth et al., 2022a). As DR progresses, it may evolve into permanent blindness, hence it is a big concern in diabetes management (Bhavya, 2022). The early detection of DR along with other threats is an important part of effective treatment of diabetes complications, and this is supported by several studies (14).
+
+Diabetes afflicted an alarming 463 million people worldwide in 2019, with developing countries like China and India showing a significant increase (Pradeepa and Mohan, 2021; Saeedi et al., 2019). This worrisome tendency is expected to persist, with projections showing that China and India will have the largest burden by 2045 (20). In addition, the risk of diabetes is higher among males (9%) compared to females (7.9%) (Kartha et al., 2017).
+
+Diabetic retinopathy, its ocular presentation, mainly attacks the fragile retina that is damaged and changes its vessels due to increased sugar levels in the blood (Sallam, 2014). Such fluid may result in loss of vision permanently (Abramoff et al., 2018). The magnitude of individuals across the world who develop DR is 30% (20). Early detection and timely treatment are important in avoiding permanent vision loss as DR progresses (Yadav et al., 2021).
+
+Two main variants of DR exist: NPDR (Non-Proliferative Diabetic Retinopathy) and PDR (Proliferative Diabetic Retinopathy). The former is defined by microaneurysms and exudates (Salmon, 2019). DR is characterized by a silent onset. Routine retinal screening continues to be a foundation for early DR detection. Standardly, ophthalmologists use manual grading that involves pupil dilation, specialized lenses, and deep knowledge for an accurate diagnosis (Memari et al., 2020). However, this method presents several drawbacks: dilatation of the pupil is an uncomfortable process requiring specialized equipment, and manual grading tasks require a substantial amount of time and skill, which can tax resources in high-throughput healthcare settings.
+
+These limitations triggered the research for automated and highly user-friendly alternatives. Healthcare technology has led to the emergence of CAD (Computer-Aided Diagnosis) systems, which are an important tool in DR diagnosis (Memari et al., 2020). AI and its subfield, Deep Learning (DL), have brought revolutionary tools for medical image analysis and processing (Davenport and Kalakota, 2019; Liu et al., 2021). DL uses complex multi-layered neural networks to extract subtle patterns from data, significantly increasing its ability to detect diseases such as DR (Chen et al., 2020).
+
+While binary classification focuses on simply categorizing retinas in color fundus images as healthy or diseased (Adriman et al., 2021; Ramchandre et al., 2020), multiclass approaches delve deeper, offering information on five distinct categories: no DR, mild DR, moderate DR, severe DR, and proliferative DR. Several publicly available datasets such as DRIVE, STARE, EyePACS, ROC, and Messidor have been instrumental in spurring the application of DL approaches for detecting and diagnosing age-related maculopathy (Mateen et al., 2020; Voets et al., 2019b; Niemeijer et al., 2010).
+
+Deep learning has significantly advanced automated DR detection and grading. CNNs have been widely used to extract retinal features and classify severity, with recent studies reporting strong results for clinical screening applications (Karthik et al., 2025a). However, conventional CNNs often fail to generalize across datasets with different imaging conditions. Variations in lighting, color, and field of view create domain shift, which limits real-world deployment. To address this, researchers have explored hybrid CNN-transformer models and attention-based architectures that improve feature discrimination and capture multi-scale information. Preprocessing techniques such as histogram matching and contrast enhancement have also been proposed to reduce dataset discrepancies (Bappi et al., 2025a).
+
+Despite these advances, existing approaches often rely on single-resolution inputs or lack explicit mechanisms to fuse complementary information from multiple spatial scales. Moreover, few studies systematically evaluate model generalization across external datasets, which is essential for assessing clinical robustness. To overcome these limitations, we propose a dual-resolution, attention-based deep learning framework that integrates multi-scale retinal features and employs an ordinal regression loss to respect the ordered severity structure inherent in DR grading. The model incorporates data preprocessing and domain adaptation techniques to reduce inter-dataset variability and is evaluated using both internal validation and external testing on independent retinal image collections.
+
+Deep learning, especially convolutional neural networks, has become the go-to approach for automating DR detection and grading from fundus images. Multiple studies have shown that these models consistently outperform traditional machine learning methods because they can learn hierarchical retinal features closely tied to disease progression (Gulshan et al., 2016; Karthik et al., 2025a). That said, high accuracy on the training dataset does not always translate to real-world performance. Many models see a noticeable drop in robustness when tested on images from different sources, pointing to ongoing challenges with domain shift and generalization (Bappi et al., 2025a).
+
+Mohanty et al. (2023) propose two deep learning architectures — a hybrid network composed of VGG16 and XGBoost Classifier, and a DenseNet-121 network — for the diagnosis and determination of DR. The hybrid network achieved 79.50% accuracy and the DenseNet-121 model achieved the highest accuracy of 97.30% using the APTOS 2019 dataset. Raiaan et al. (2023) target the identification and classification of fundus photos into five DR classes, producing the RetNet-10 model giving 98.65% accuracy. Nivedha and Sreelakshmi (2023) introduces a deep learning method with MobileNetV2 for DR detection achieving approximately 85.28% classification accuracy. Another study (Raman and Nishanthi, 2023) developed an EfficientNet-B7 model to detect DR using the APTOS 2019 dataset, achieving 94% accuracy.
+
+Mondal et al. (2023) developed a deep learning framework named EDLDR as an ensemble method for DR diagnosis and classification using retinal fundus images, achieving an accuracy of 86.08% for five classes and 96.98% for two classes. Nazir et al. (2021) propose a new method based on a custom deep learning CenterNet model tested on APTOS-2019 and IDRiD datasets with average accuracies of 97.93% and 98.10%, respectively. Subbanna (2023) suggests a deep learning method with the CNN architecture and MobileNetV2 attaining 92.6% accuracy. Abirami and Kavitha (2022) proposes an ensemble model based on EfficientNet achieving a 0.907 quadratic weighted kappa score on an independent test dataset.
+
+Recent work has shown that combining transfer learning with attention mechanisms can be highly effective for ocular disease classification (Fu et al., 2024a). DR presents a particular challenge because lesions come in different sizes and have varied visual characteristics. This has led many researchers to explore multi-scale CNN architectures that can capture both small lesion details and larger retinal patterns. Fu et al. (2024a) proposed a multi-scale EfficientNet framework that fuses features from different receptive fields and showed improved severity grading. Shakibania et al. (2024a) took a similar approach with a dual-branch network and found that parallel feature extraction outperforms single-stream designs.
+
+Attention mechanisms have become increasingly common in DR analysis because they help highlight the regions that matter most — areas with microaneurysms, hemorrhages, and other pathological features (Romero-Oraa et al., 2024a). More recent approaches use channel-wise or spatial attention to weight features more selectively, leading to better and more consistent grading results (Zhang et al., 2025). It is also worth noting that DR grading is not a standard classification problem. Ordinal regression methods like CORAL address this by enforcing rank consistency, which tends to improve agreement metrics like quadratic weighted kappa (Shi et al., 2023). Several DR studies have highlighted how ordinal-aware approaches and QWK-based evaluation better reflect clinical grading behavior (Karthik et al., 2025a; Chilukoti et al., 2024).
+
+One issue affecting many DR grading systems is their dependence on dataset-specific characteristics (Bappi et al., 2025a). To deal with this, researchers have turned to preprocessing techniques like circular cropping, contrast enhancement, and histogram alignment (Fu et al., 2024a; Romero-Oraa et al., 2024a). Taking all of this into account, the present work brings together several directions from the literature: dual-resolution feature extraction (Fu et al., 2024a; Shakibania et al., 2024a), attention-based fusion (Romero-Oraa et al., 2024a; Zhang et al., 2025), ordinal regression via CORAL (Shi et al., 2023; Chilukoti et al., 2024), and cross-dataset evaluation to address domain shift (Bappi et al., 2025a). The proposed model is tested on the Messidor-2 dataset to assess its generalization ability.
+
+2Materials and Methods
+The proposed methodology addresses automated DR grading by combining dual-resolution retinal feature extraction, attention-based feature fusion, and ordinal regression modeling, with explicit consideration of cross-dataset robustness. The framework is designed to capture complementary retinal patterns at different spatial scales while respecting the ordinal nature of DR severity levels and mitigating domain shift between heterogeneous datasets. The workflow consists of the following steps: (1) dataset preparation and splitting, (2) preprocessing and domain normalization, (3) dual-resolution feature extraction, (4) attention-guided feature fusion, (5) ordinal regression using CORAL loss, and (6) training and evaluation with internal and external validation.
+
+2.1Dataset Preparation and Splitting
+Two publicly available collections of retinal fundus images were used in this study: APTOS 2019 and Messidor-2. APTOS 2019 (4) served as the main dataset for training and internal validation. Each image in this dataset comes with a label indicating the severity of diabetic retinopathy, ranging from 0 (no disease) to 4 (proliferative DR, the most advanced stage), as shown in Figure 1. The dataset was divided into training and validation portions using stratified sampling, which ensures both portions have a similar balance of severity levels.
+
+Refer to caption
+Figure 1:Sample fundus images from each DR severity label (grades 0–4).
+Messidor-2 (Decenciere et al., 2014) consists of retinal fundus images collected from multiple clinical centres using different acquisition devices, resulting in substantial variability in illumination, colour distribution, and field of view. Each image is labelled with a DR severity grade consistent with the same five-level ordinal scale used in APTOS. For the Messidor-2 dataset, only images marked as gradable and adjudicated were included to ensure reliable evaluation. This dataset was split into: (a) a training portion, which was included so the model could learn from images captured under different conditions and equipment; and (b) a test portion, which was kept completely separate and only used for final evaluation. The final training set was created by combining the APTOS 2019 training samples with the Messidor-2 training portion.
+
+2.2Preprocessing and Domain Normalization
+Retinal fundus images can look quite different from one another depending on the camera used, lighting conditions, and how much of the eye was captured. To handle this variability and make the model more reliable, a series of preprocessing steps were applied to all images.
+
+Retinal Region Isolation.
+Each image was cropped in a circular shape to remove the dark, uninformative background around the edges. This keeps only the actual retinal area and removes distracting artefacts near the borders, also helping ensure that all images have a consistent spatial layout.
+
+Dataset-Aware Image Enhancement.
+Two different enhancement techniques were used to bring out different visual features:
+
+• Ben Graham normalisation highlights blood vessel structures and improves overall contrast. It was originally introduced during the Kaggle Diabetic Retinopathy Detection competition and has since become a standard preprocessing step for fundus images (Graham,).
+• Contrast-Limited Adaptive Histogram Equalisation (CLAHE) boosts local contrast, making it easier to spot small lesions and subtle abnormalities that might otherwise go unnoticed (Zuiderveld, 1994). Each enhanced version captures different but useful information, so both are fed into separate branches of the network.
+Histogram Matching for Domain Alignment.
+Images from APTOS 2019 and Messidor-2 often have noticeable differences in colour and brightness. To reduce this gap, histogram matching was applied to the Messidor-2 images. A reference image from the APTOS training set was selected, and the colour and intensity distribution of each Messidor-2 image was adjusted to match it. This brings the two datasets closer together statistically without changing the actual medical content of the images (Gonzalez and Woods, 2018). All preprocessing stages are illustrated in Figure 2 using representative samples from both datasets.
+
+Refer to caption
+Figure 2:Visualisation of the preprocessing pipeline for APTOS and Messidor-2 images.
+Data Augmentation.
+To help the model generalise better and avoid overfitting, several augmentation techniques were applied during training: random horizontal flipping, adjustments to brightness and contrast, and gamma correction. No augmentation was applied to validation or test images to ensure a fair evaluation.
+
+2.3Dual-Resolution Feature Extraction
+The proposed model is built around two EfficientNet backbones — B0 and B3 — that run in parallel (Tan and Le, 2019). The B0 branch takes in globally normalised images at 
+224
+×
+224
+ pixels and is good at capturing overall patterns, while the B3 branch works with locally enhanced images at a higher 
+300
+×
+300
+ resolution, which helps it pick up finer lesion details. Once both branches have extracted their features, the outputs are combined and fed into an attention-based fusion module. This module learns to assign different weights to each branch depending on the input image, so the model can flexibly decide whether to rely more on global context or fine-grained lesion information for any given case.
+
+2.4Attention-Based Feature Fusion
+After both branches finish extracting features, the outputs are combined and fed into an attention module based on the squeeze-and-excitation mechanism (Tan and Le, 2019). The two feature vectors are concatenated:
+
+f
+concat
+=
+[
+f
+0
+∣
+∣
+f
+3
+]
+(1)
+The concatenated feature vector is passed through a learnable attention network to produce a gating vector 
+𝐠
+. The final fused feature vector is computed as a weighted combination of branch features:
+
+f
+fused
+=
+f
+0
+⊙
+𝐠
++
+f
+3
+⊙
+(
+1
+−
+𝐠
+)
+(2)
+This module learns which channels matter most by assigning weights that determine how much each resolution branch should contribute, capturing the best of both worlds: detailed local information and broader structural context.
+
+2.5Ordinal Regression via CORAL Layer
+The fused feature vector is then passed to a fully connected head implementing CORAL (Cumulative Ordinal Regression with Logistic loss) (Cao et al., 2020b). The model outputs 
+K
+−
+1
+ binary logits for 
+K
+=
+5
+ DR grades. Each logit represents whether the severity exceeds a given threshold. Unlike standard classification that predicts a single category, this layer outputs a series of binary decisions based on ordered severity thresholds. This setup respects the natural ordering of DR grades, so if the model makes a mistake, it is more likely to be a near-miss rather than a completely wrong prediction, making the output more clinically meaningful.
+
+2.6DR Grade Prediction
+Once the ordinal outputs are aggregated, the model assigns a final DR grade. There are five possible outcomes: No DR, Mild, Moderate, Severe, and Proliferative DR. The idea here is not to replace the ophthalmologist but to provide a reliable second opinion that can support clinical decision-making and streamline the screening process. Figure 3 illustrates the overall architecture of the proposed dual-resolution attention-based framework.
+
+Refer to caption
+Figure 3:Architecture of the proposed dual-resolution attention-based framework for diabetic retinopathy grading.
+2.7Training Strategy
+The model is trained using Adam as the optimizer, with a learning rate set to 
+1
+×
+10
+−
+4
+. Mixed-precision training helps reduce memory usage and speeds up the process. Because some severity levels appear far more often than others in the dataset, a weighted random sampler is used to balance the training batches based on how frequently each label occurs. During training, the quadratic weighted kappa is monitored on the APTOS validation set. The model checkpoint with the best QWK score is kept for the final evaluation.
+
+2.8Evaluation Metrics
+Quadratic weighted kappa (QWK) is used as the main evaluation metric. QWK is particularly useful here because it accounts for the ordinal nature of DR grades: predictions that are slightly off are penalised less than those that are way off. Confusion matrices are also included to show how well the model distinguishes between individual classes on both internal and external datasets.
+
+3Results
+3.1Training Dynamics and Loss Convergence
+The model was trained for 10 epochs using a combined training set that included APTOS training images along with a subset of Messidor-2 images. Optimization was performed using the CORAL ordinal regression loss, which treats DR grading as a series of ordered binary classification tasks rather than a single multi-class problem. Training proceeded smoothly, with the loss decreasing steadily across all epochs. At the same time, training QWK improved from 0.72 in the first epoch to over 0.97 by the later stages. This steady improvement suggests that the combination of ordinal loss and weighted sampling worked well together to handle class imbalance.
+
+3.2In-Domain Performance on APTOS
+On the APTOS validation set, the best model reached a QWK of 0.88. The confusion matrix in Figure 4 shows strong agreement between predicted and actual grades. Most of the errors that did occur were between neighbouring severity levels, for example confusing mild with moderate DR. This kind of error pattern makes sense given the ordinal nature of the task. Clinically, the boundaries between adjacent grades can be subtle, and even human graders often disagree near these thresholds. Importantly, large jumps in severity were rare, indicating that the ordinal loss did its job in keeping predictions within a reasonable range.
+
+3.3External Evaluation on Messidor-2
+To assess generalization, the selected model was tested on a held-out portion of Messidor-2 that was never seen during training or model selection. On this external dataset, the model achieved a QWK of 0.68. As expected, performance dropped compared to APTOS. This is largely due to domain shift: Messidor-2 images come from different cameras, have different lighting conditions, and follow slightly different acquisition protocols. That said, a QWK of 0.68 still reflects meaningful agreement and suggests that the model generalises reasonably well without any fine-tuning or adaptation at test time.
+
+Refer to caption
+Figure 4:Confusion matrix (top) and training loss / QWK curves (bottom) on both APTOS and Messidor-2 datasets.
+3.4Summary of Quantitative Results
+To summarize: training loss decreased steadily across epochs (CORAL loss); APTOS validation QWK: 0.88; Messidor-2 external test QWK: 0.68. These results show that the model performs well on in-domain data and maintains reasonable robustness when applied to an external dataset under realistic conditions.
+
+4Discussion
+4.1Effect of Ordinal Loss Optimization
+The choice of CORAL loss had a significant impact on how the model learned to grade DR severity. Unlike standard categorical cross-entropy, which treats all misclassifications equally, CORAL explicitly accounts for the ordering of severity levels and penalizes large ranking errors more heavily. This difference shows up clearly in the confusion matrices, where most misclassifications stay within neighbouring grades rather than jumping across multiple levels. This kind of behaviour is exactly what one would want in a clinical grading system. These findings align with earlier studies that have highlighted the value of ordinal modelling for tasks like DR severity assessment (Cao et al., 2020a; Karthik et al., 2025b).
+
+4.2Dual Preprocessing and Feature Fusion
+The decision to use two preprocessing pipelines — Ben Graham normalisation and CLAHE — allowed the model to learn from complementary views of the same retinal image. Each preprocessing method emphasizes different aspects of the fundus image, and combining them gives the model access to a richer set of features. The attention-based fusion module takes this a step further by learning to weight features from each branch depending on the input image, which helps when dealing with images that vary in lesion visibility or contrast. This approach builds on recent attention-based DR frameworks but goes a step further by integrating preprocessing diversity directly into the learning pipeline (Bappi et al., 2025b; Siddharth et al., 2022b).
+
+4.3Cross-Dataset Generalization
+The drop in performance between APTOS and Messidor-2 is a reminder of how challenging domain shift remains in retinal imaging. Even with histogram matching applied and some Messidor-2 images included during training, the model still performed noticeably better on in-domain data than on the external test set. This pattern is consistent with what other recent cross-dataset DR studies have reported (Romero-Oraa et al., 2024b; Voets et al., 2019a; Fu et al., 2024b). It is worth noting that the evaluation protocol used here is stricter than what many prior studies have adopted.
+
+4.4Comparison with Existing Research
+Table 1 offers a conceptual comparison between the proposed method and other recent approaches to DR grading. Direct numerical comparisons have been intentionally avoided because different studies use different datasets, grading schemes, loss functions, and validation protocols. Instead, the table focuses on methodological differences and highlights where the proposed approach fits within the broader landscape of DR grading research.
+
+Table 1:Positioning of the proposed method relative to recent DR grading literature.
+Category
+ 	
+Reference
+Key Techniques
+Typical Limitations
+Proposed Method
+Hybrid / ensemble models
+ 	
+(Bappi et al., 2025b)
+EfficientNet-based ensemble
+Focus on in-dataset accuracy
+Explicit cross-dataset robustness
+Attention & feature fusion
+ 	
+(Siddharth et al., 2022b)
+Attention-based feature integration
+Limited external validation
+Attention over dual preprocessing streams
+Generalization challenges
+ 	
+(Romero-Oraa et al., 2024b)
+Survey of DR DL limitations
+Highlights robustness gaps
+Explicit robustness-oriented design
+Cross-dataset evaluation
+ 	
+(Voets et al., 2019a)
+Reproducibility across datasets
+Performance instability
+Strict APTOS 
+→
+ Messidor testing
+Multi-scale architectures
+ 	
+(Fu et al., 2024b)
+Multi-scale EfficientNet fusion
+No ordinal learning
+Dual-resolution + ordinal regression
+Ordinal regression
+ 	
+(Shakibania et al., 2024b)
+Ordinal loss + QWK
+Single-branch models
+CORAL with dual-branch fusion
+4.5Limitations
+The model was trained using image-level labels only, since lesion-level annotations were not available in the datasets used. Exploring weakly-supervised methods to bring in finer-grained supervision could be a useful next step. Although histogram matching helped reduce the gap between datasets, more advanced domain adaptation techniques such as adversarial training were not used, and these might push cross-dataset performance even further. Finally, the model was only tested on two public datasets — APTOS and Messidor-2. To really know how well this approach holds up in practice, it would need to be validated on clinical data from multiple centres.
+
+5Conclusions
+This work presented a hybrid dual-branch framework for DR grading that brings together three key components: dual preprocessing, attention-based feature fusion, and CORAL ordinal regression. The model achieved strong in-domain performance on APTOS, reaching a QWK of 0.88, and showed reasonable generalization on the external Messidor-2 dataset with a QWK of 0.68, all under a strict evaluation protocol that kept training and test data fully separate. The findings reinforce the value of ordinal-aware loss functions and multi-resolution feature integration for severity grading in DR. At the same time, the performance gap between datasets serves as a reminder that domain shift remains a significant hurdle in retinal imaging.
+
+Looking ahead, there are several directions worth exploring. Stronger domain adaptation methods could help close the gap between training and external performance. Incorporating lesion-level supervision may improve the model’s ability to capture fine-grained pathology. And validation on larger, multi-centre datasets would provide a clearer picture of how the approach performs across diverse clinical settings.
+
+Funding
+This research received no external funding.
+
+Conflicts of Interest
+The author declares no conflict of interest.
+
+Data Availability Statement
+The datasets used in this study are publicly available: APTOS 2019 (https://www.kaggle.com/c/aptos2019-blindness-detection) and Messidor-2 (https://www.adcis.net/en/third-party/messidor2/).
+
+Abbreviations
+The following abbreviations are used in this manuscript:
+
+• DR — Diabetic Retinopathy
+• CNN — Convolutional Neural Network
+• QWK — Quadratic Weighted Kappa
+• CORAL — Cumulative Ordinal Regression with Logistic Loss
+• CLAHE — Contrast-Limited Adaptive Histogram Equalisation
+• NPDR — Non-Proliferative Diabetic Retinopathy
+• PDR — Proliferative Diabetic Retinopathy

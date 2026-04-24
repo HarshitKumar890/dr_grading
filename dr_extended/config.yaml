@@ -1,0 +1,38 @@
+data:
+  aptos_images_dir: ../data/data1/aptos2019-blindness-detection/train_images
+  aptos_csv_path: ../data/data1/aptos2019-blindness-detection/train.csv
+  messidor_images_dir: ../data/data1/Messior2
+  messidor_csv_path: ../data/data1/messidor2_labels.csv
+  histogram_matching_for_messidor: true
+
+model:
+  b0_input_size: 224
+  b3_input_size: 300
+  fusion_dim: 1536
+
+train:
+  seed: 42
+  epochs: 30
+  batch_size: 16
+  lr: 0.0001
+  weight_decay: 0.0
+  use_amp: true
+  num_workers: 4
+  pin_memory: true
+  early_stopping_patience: 5
+
+output:
+  output_dir: ./outputs
+
+use_preprocessed: true
+
+domain_adaptation:
+  enabled: false
+  lambda_start: 0.001
+  lambda_max: 0.1
+  ramp_epochs: 5
+  lambda_target_coral: 0.2
+
+attention_consistency:
+  enabled: true
+  lambda_att: 0.1
